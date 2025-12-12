@@ -1,13 +1,13 @@
 --[[
 Title: Needle Dial
 Author: Wobin
-Date: 11/12/2025
+Date: 12/12/2025
 Repository: https://github.com/Wobin/NeedleDial
-Version: 1.0.0
+Version: 2.0.0
 --]]
 
 local mod = get_mod("Needle Dial")
-mod.version = "1.0.0"
+mod.version = "2.0.0"
 
 local Color = Color
 local table = table
@@ -15,27 +15,32 @@ local equals = table.equals
 local Managers = Managers
 local ManagersPlayer = Managers.player
 
-local needlePistol = "content/items/weapons/player/ranged/needlepistol_p1_m1"
-local needlePistol2 = "content/items/weapons/player/ranged/needlepistol_p1_m2"
+local valid_weapons = {
+    ["content/items/weapons/player/melee/saw_p1_m1"]  =             {"slot_primary", "yellow", "magenta"},
+    ["content/items/weapons/player/melee/crowbar_p1_m1"] =          {"slot_primary", "terminal_text_body", "magenta"},
+    ["content/items/weapons/player/ranged/needlepistol_p1_m1"] =    {"slot_secondary", "yellow", "cyan"},
+    ["content/items/weapons/player/ranged/needlepistol_p1_m2"] =    {"slot_secondary", "yellow", "cyan"}
+}
 
 mod.game_state = mod:persistent_table("gameState", {})
 
 mod.init = function()
     mod:hook_safe(CLASS.HudElementPlayerWeapon,"update", function(self)            
-        if self._parent._player._profile.archetype.name == "broker" and self._slot_name == "slot_secondary" and (self._weapon_name == needlePistol or self._weapon_name == needlePistol2) then        
+        if self._parent._player._profile.archetype.name == "broker" and self._slot_name == (valid_weapons[self._weapon_name] and valid_weapons[self._weapon_name][1] or "") and self._slot_component.special_active ~= nil then        
             local special_active = self._slot_component.special_active
             local icon_widget = self._widgets_by_name.icon
             local icon_style = icon_widget.style.icon
+            local settings = valid_weapons[self._weapon_name]
             
-            local cyan = Color.cyan(255, true)
-            local yellow = Color.yellow(255, true)
+            local inactive = Color[settings[2]](255, true)
+            local active = Color[settings[3]](255, true)
 
-            if (special_active and not equals(icon_style.color, cyan)) or (not special_active and not equals(icon_style.color, yellow)) then            
-                icon_style.color = special_active and cyan or yellow             
+            if (special_active and not equals(icon_style.color, active)) or (not special_active and not equals(icon_style.color, inactive)) then            
+                icon_style.color = special_active and active or inactive                        
                 icon_widget.dirty = true                    
             end                          
         end    
-    end)
+    end)    
     mod.initialized = true    
 end
 
@@ -55,3 +60,4 @@ mod.on_all_mods_loaded = function()
         mod.on_game_state_changed(mod.game_state.status, mod.game_state.state_name)
     end
 end
+
