@@ -3,11 +3,11 @@ Title: A La Mode
 Author: Wobin
 Date: 15/12/2025
 Repository: https://github.com/Wobin/ALaMode
-Version: 3.0.0
+Version: 3.1.0
 --]]
 
 local mod = get_mod("A la Mode")
-mod.version = "3.0.0"
+mod.version = "3.1.0"
 
 local Color = Color
 local table = table
@@ -57,7 +57,9 @@ mod.init = function()
             local active =      settings[3]
 
             if (special_active and not equals(icon_style.color, active)) or (not special_active and not equals(icon_style.color, inactive)) then            
-                icon_style.color = special_active and active or inactive                        
+                icon_style.color[2] = special_active and active[2] or inactive[2]                        
+                icon_style.color[3] = special_active and active[3] or inactive[3]                        
+                icon_style.color[4] = special_active and active[4] or inactive[4]                        
                 icon_widget.dirty = true                    
             end                          
         end    
