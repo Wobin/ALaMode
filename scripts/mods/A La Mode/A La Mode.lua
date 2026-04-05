@@ -3,11 +3,11 @@ Title: A La Mode
 Author: Wobin
 Date: 05/04/2026
 Repository: https://github.com/Wobin/ALaMode
-Version: 3.2.0
+Version: 3.2.1
 --]]
 
 local mod = get_mod("A la Mode")
-mod.version = "3.2.0"
+mod.version = "3.2.1"
 
 local Color = Color
 
@@ -40,21 +40,31 @@ local setup = mod:io_dofile("A La Mode/scripts/mods/A La Mode/data/ui")
 
 mod.game_state = mod:persistent_table("gameState", {})
 
-local current_weapon_name, current_weapon, current_weapon_colours, current_slot_name, current_widget, current_style, last_applied_color
+local current_weapons = {}  -- Cache per slot: {slot_primary = {name, weapon, colours}, slot_secondary = {...}}
 
 mod.init = function()
     get_colours()
     mod:hook_safe(CLASS.HudElementPlayerWeapon,"update", function(self)                  
-        if current_weapon_name ~= self._weapon_name then
-            current_weapon = valid_weapons[self._weapon_name]
-            current_weapon_colours = weapon_colors[self._weapon_name]
-            current_slot_name = self._slot_name
-            current_widget = self._widgets_by_name.icon
-            current_style = current_widget.style.icon
+        local slot = self._slot_name
+        if not current_weapons[slot] then
+            current_weapons[slot] = {}
+        end
+        local slot_cache = current_weapons[slot]
+        if slot_cache.weapon_name ~= self._weapon_name then
+            slot_cache.weapon_name = self._weapon_name
+            slot_cache.weapon = valid_weapons[self._weapon_name]
+            slot_cache.weapon_colours = weapon_colors[self._weapon_name]
+            self._alm_last_applied_color = nil 
         end 
-       if current_slot_name == ( current_weapon and current_weapon_colours[1] or "") and self._slot_component.special_active ~= nil then        
+        
+        local current_weapon = slot_cache.weapon
+        local current_weapon_colours = slot_cache.weapon_colours
+        
+        if slot == ( current_weapon and current_weapon_colours[1] or "") and self._slot_component.special_active ~= nil then        
             
             local special_active = self._slot_component.special_active
+            local icon_widget = self._widgets_by_name.icon
+            local icon_style = icon_widget.style.icon
             local current_num_activations = self._slot_component.num_special_charges
             
             local inactive =    current_weapon_colours[2]
@@ -63,11 +73,18 @@ mod.init = function()
                                  
             local is_cooldown = cooldown and not special_active and current_num_activations == 0
             local target_color = is_cooldown and cooldown or (special_active and active or inactive)
-            if target_color ~= last_applied_color then
-            for i = 2, 4 do current_style.color[i] = target_color[i] end
-                current_widget.dirty = true
-                last_applied_color = target_color
+            
+            local color_changed = false
+            for i = 2, 4 do 
+                if icon_style.color[i] ~= target_color[i] then
+                    icon_style.color[i] = target_color[i]
+                    color_changed = true
+                end
             end
+            if color_changed then
+                icon_widget.dirty = true
+            end
+            self._alm_last_applied_color = target_color
         end  
     end)            
     mod.initialized = true    
