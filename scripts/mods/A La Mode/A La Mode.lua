@@ -1,13 +1,12 @@
 --[[
 Title: A La Mode
 Author: Wobin
-Date: 24/06/2026
+Date: 20/08/2026
 Repository: https://github.com/Wobin/ALaMode
-Version: 3.3.0
 --]]
 
 local mod = get_mod("A la Mode")
-mod.version = "3.3.0"
+mod.version = mod.get_metadata and mod:get_metadata("version") or "unknown"
 
 local Color = Color
 
@@ -16,13 +15,10 @@ local valid_weapons = mod:io_dofile("A La Mode/scripts/mods/A La Mode/data/weapo
 local weapon_colors = {}
 
 local get_colours = function(setting_id)
-    if setting_id == "alm_open_setup" then
-        mod:set("alm_open_setup", false, false)  
-        if mod.setup then
-            mod.setup:open()
-            return
-        end
+    if setting_id == "alm_weapon_selector" then
+        return
     end
+
     weapon_colors = {}
     for weapon,defaults in pairs(valid_weapons)     do
         weapon_colors[weapon] = { ( weapon:match("melee") and "slot_primary" or "slot_secondary"), 
@@ -35,8 +31,6 @@ local get_colours = function(setting_id)
     end    
 end
 
-
-local setup = mod:io_dofile("A La Mode/scripts/mods/A La Mode/data/ui")
 
 mod.game_state = mod:persistent_table("gameState", {})
 
@@ -100,7 +94,6 @@ end
 
 mod.on_all_mods_loaded = function()
     mod:info(mod.version)
-    mod.setup = setup:new()
     if mod.game_state.status and mod.game_state.state_name then        
         mod.on_game_state_changed(mod.game_state.status, mod.game_state.state_name)
     end
@@ -110,9 +103,5 @@ mod.on_all_mods_loaded = function()
 end
 
 mod.on_setting_changed = get_colours
+mod.on_settings_reset = get_colours
 
-mod.update = function(dt)
-    if mod.setup and mod.setup._is_open then
-        mod.setup:update(dt)
-    end
-end
