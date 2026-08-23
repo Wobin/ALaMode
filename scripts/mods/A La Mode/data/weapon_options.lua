@@ -12,6 +12,8 @@ local function swatch(name)
 	return Color.white(255, true)
 end
 
+M.swatch = swatch
+
 local function display_name(key, data)
 	local ok, text = pcall(Localize, data[1])
 

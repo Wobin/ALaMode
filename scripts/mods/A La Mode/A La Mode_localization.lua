@@ -12,8 +12,4 @@ return {
 		en = "A La Mode",
 		ru = "А-ля мод",
 	},
-	alm_open_setup = {
-		en = "Open Settings Window",
-		ru = "Открыть окно настроек",
-	},
 }

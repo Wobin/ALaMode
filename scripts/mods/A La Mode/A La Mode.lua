@@ -1,7 +1,7 @@
 --[[
 Title: A La Mode
 Author: Wobin
-Date: 20/08/2026
+Date: 23/08/2026
 Repository: https://github.com/Wobin/ALaMode
 --]]
 
@@ -14,27 +14,40 @@ local valid_weapons = mod:io_dofile("A La Mode/scripts/mods/A La Mode/data/weapo
 
 local weapon_colors = {}
 
+local swatch = function(name)
+    local options = mod.weapon_options
+
+    if options and options.swatch then
+        return options.swatch(name)
+    end
+
+    local fn = name and rawget(Color, name)
+
+    return fn and fn(255, true) or Color.white(255, true)
+end
+
 local get_colours = function(setting_id)
     if setting_id == "alm_weapon_selector" then
         return
     end
 
-    weapon_colors = {}
+    local built = {}
     for weapon,defaults in pairs(valid_weapons)     do
-        weapon_colors[weapon] = { ( weapon:match("melee") and "slot_primary" or "slot_secondary"), 
-                                    mod:get(weapon .. "-color_1") or Color[defaults[2]](255, true), 
-                                    mod:get(weapon .. "-color_2") or Color[defaults[3]](255, true),                                    
+        built[weapon] = { ( weapon:match("melee") and "slot_primary" or "slot_secondary"),
+                                    mod:get(weapon .. "-color_1") or swatch(defaults[2]),
+                                    mod:get(weapon .. "-color_2") or swatch(defaults[3]),
                                 }
         if defaults[4] then
-            weapon_colors[weapon][4] = mod:get(weapon .. "-color_3") or Color[defaults[4]](255, true)
+            built[weapon][4] = mod:get(weapon .. "-color_3") or swatch(defaults[4])
         end
-    end    
+    end
+    weapon_colors = built
 end
 
 
 mod.game_state = mod:persistent_table("gameState", {})
 
-local current_weapons = {}  -- Cache per slot: {slot_primary = {name, weapon, colours}, slot_secondary = {...}}
+local current_weapons = {}
 
 mod.init = function()
     get_colours()
@@ -48,8 +61,7 @@ mod.init = function()
             slot_cache.weapon_name = self._weapon_name
             slot_cache.weapon = valid_weapons[self._weapon_name]
             slot_cache.weapon_colours = weapon_colors[self._weapon_name]
-            self._alm_last_applied_color = nil 
-        end 
+        end
         
         local current_weapon = slot_cache.weapon
         local current_weapon_colours = slot_cache.weapon_colours
@@ -78,8 +90,7 @@ mod.init = function()
             if color_changed then
                 icon_widget.dirty = true
             end
-            self._alm_last_applied_color = target_color
-        end  
+        end
     end)            
     mod.initialized = true    
 end
@@ -100,6 +111,12 @@ mod.on_all_mods_loaded = function()
     if get_mod("Needle Dial") then
         mod:echo("Please uninstall Needle Dial. A La Mode is the replacement mod")
     end
+end
+
+mod.on_unload = function()
+    mod.initialized = false
+    current_weapons = {}
+    weapon_colors = {}
 end
 
 mod.on_setting_changed = get_colours
